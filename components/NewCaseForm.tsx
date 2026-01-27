@@ -130,77 +130,77 @@ const NewCaseForm: React.FC<NewCaseFormProps> = ({ patients, companies, editingC
     onSubmit(payload, patientToSave);
   };
 
-  const inputClasses = "w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-900 focus:ring-4 focus:ring-arial-orange/10 focus:border-arial-orange outline-none transition-all font-bold text-xs shadow-sm";
-  const labelClasses = "text-[9px] font-black text-slate-400 uppercase mb-1.5 block ml-1 tracking-widest";
+  const inputClasses = "w-full px-4 py-3 md:py-3.5 rounded-xl border border-slate-200 bg-white text-slate-900 focus:ring-4 focus:ring-arial-orange/10 focus:border-arial-orange outline-none transition-all font-bold text-xs md:text-sm shadow-sm";
+  const labelClasses = "text-[8px] md:text-[9px] font-black text-slate-400 uppercase mb-1.5 block ml-1 tracking-widest";
 
   return (
-    <div className="max-w-4xl mx-auto py-4 animate-in slide-in-from-bottom-4 duration-500">
-      <div className="bg-white rounded-[2.5rem] shadow-2xl border border-slate-100 overflow-hidden">
-        <div className="px-10 py-6 bg-slate-900 text-white">
-            <h2 className="text-xl font-black uppercase tracking-tight">Admisión Administrativa</h2>
-            <p className="text-white/40 text-[9px] font-black uppercase tracking-[0.2em] mt-1">Apertura de caso de ausentismo</p>
+    <div className="max-w-4xl mx-auto py-2 md:py-4 animate-in slide-in-from-bottom-4 duration-500">
+      <div className="bg-white rounded-3xl md:rounded-[2.5rem] shadow-2xl border border-slate-100 overflow-hidden">
+        <div className="px-6 md:px-10 py-5 md:py-6 bg-slate-900 text-white">
+            <h2 className="text-lg md:text-xl font-black uppercase tracking-tight">Admisión Administrativa</h2>
+            <p className="text-white/40 text-[8px] md:text-[9px] font-black uppercase tracking-[0.2em] mt-1">Apertura de caso</p>
         </div>
 
         {!isFormVisible ? (
-          <div className="p-16 space-y-8 text-center">
+          <div className="p-8 md:p-16 space-y-6 md:space-y-8 text-center">
             <div className="max-w-md mx-auto relative" ref={patientSearchRef}>
-              <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest mb-6">Identificar Colaborador</h3>
+              <h3 className="text-[10px] md:text-xs font-black text-slate-800 uppercase tracking-widest mb-4 md:mb-6">Identificar Colaborador</h3>
               <div className="relative group">
                 <input 
                   type="text" 
-                  className="w-full px-8 py-5 rounded-2xl border-2 border-slate-100 bg-slate-50 focus:bg-white focus:border-arial-orange outline-none transition-all font-bold text-lg placeholder:text-slate-300 shadow-inner"
+                  className="w-full px-6 md:px-8 py-4 md:py-5 rounded-2xl border-2 border-slate-100 bg-slate-50 focus:bg-white focus:border-arial-orange outline-none transition-all font-bold text-base md:text-lg placeholder:text-slate-300 shadow-inner"
                   value={patientSearch}
                   onChange={e => { setPatientSearch(e.target.value); setShowPatientDropdown(true); }}
                   placeholder="DNI, Nombre o Apellido..."
                 />
                 {showPatientDropdown && filteredPatients.length > 0 && (
-                  <div className="absolute z-[70] left-0 right-0 mt-2 bg-white border border-slate-200 rounded-2xl shadow-2xl p-2 text-left max-h-72 overflow-y-auto animate-in fade-in zoom-in-95 duration-200">
+                  <div className="absolute z-[70] left-0 right-0 mt-2 bg-white border border-slate-200 rounded-2xl shadow-2xl p-2 text-left max-h-60 md:max-h-72 overflow-y-auto animate-in fade-in zoom-in-95 duration-200">
                     {filteredPatients.map(p => (
-                      <button key={p.id} type="button" className="w-full text-left px-5 py-4 hover:bg-orange-50 rounded-xl transition-all border-b border-slate-50 last:border-0" onClick={() => handleSelectExisting(p)}>
-                        <p className="font-black text-slate-800 text-sm">{p.nombre} {p.apellido}</p>
-                        <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">{p.empresa} | DNI: {p.dni}</p>
+                      <button key={p.id} type="button" className="w-full text-left px-4 md:px-5 py-3 md:py-4 hover:bg-orange-50 rounded-xl transition-all border-b border-slate-50 last:border-0" onClick={() => handleSelectExisting(p)}>
+                        <p className="font-black text-slate-800 text-xs md:text-sm">{p.nombre} {p.apellido}</p>
+                        <p className="text-[8px] md:text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1 truncate">{p.empresa} | DNI: {p.dni}</p>
                       </button>
                     ))}
                   </div>
                 )}
               </div>
-              <div className="mt-8 pt-8 border-t border-slate-100 flex flex-col items-center">
-                <button type="button" onClick={handleCreateNew} className="px-10 py-4 bg-white text-arial-orange rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] border-2 border-arial-orange/10 hover:bg-arial-orange hover:text-white transition-all shadow-xl active:scale-95">
+              <div className="mt-6 md:mt-8 pt-6 md:pt-8 border-t border-slate-100 flex flex-col items-center">
+                <button type="button" onClick={handleCreateNew} className="w-full md:w-auto px-8 md:px-10 py-4 bg-white text-arial-orange rounded-2xl text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] border-2 border-arial-orange/10 hover:bg-arial-orange hover:text-white transition-all shadow-xl active:scale-95">
                   + Nuevo Registro de Paciente
                 </button>
               </div>
             </div>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="p-10 space-y-10">
-            <section className="space-y-6">
+          <form onSubmit={handleSubmit} className="p-6 md:p-10 space-y-8 md:space-y-10">
+            <section className="space-y-4 md:space-y-6">
               <div className="flex justify-between items-center border-b border-slate-100 pb-2">
-                <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-[0.2em]">Datos del Colaborador</h3>
-                <button type="button" onClick={() => setIsFormVisible(false)} className="text-[9px] font-black text-arial-orange bg-orange-50 px-3 py-1 rounded-full uppercase hover:bg-arial-orange hover:text-white transition-all">Cambiar Persona</button>
+                <h3 className="text-[9px] md:text-[10px] font-black text-slate-800 uppercase tracking-[0.2em]">Datos del Colaborador</h3>
+                <button type="button" onClick={() => setIsFormVisible(false)} className="text-[8px] md:text-[9px] font-black text-arial-orange bg-orange-50 px-3 py-1 rounded-full uppercase hover:bg-arial-orange hover:text-white transition-all">Cambiar</button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-6 gap-4 p-8 bg-slate-50/50 rounded-[2rem] border border-slate-100">
-                <div className="md:col-span-2">
+              <div className="grid grid-cols-2 md:grid-cols-6 gap-3 md:gap-4 p-4 md:p-8 bg-slate-50/50 rounded-2xl md:rounded-[2rem] border border-slate-100">
+                <div className="col-span-1 md:col-span-2">
                   <label className={labelClasses}>Nombre</label>
                   <input type="text" className={inputClasses} value={patientData.nombre} onChange={e => setPatientData({...patientData, nombre: e.target.value})} required />
                 </div>
-                <div className="md:col-span-2">
+                <div className="col-span-1 md:col-span-2">
                   <label className={labelClasses}>Apellido</label>
                   <input type="text" className={inputClasses} value={patientData.apellido} onChange={e => setPatientData({...patientData, apellido: e.target.value})} required />
                 </div>
-                <div className="md:col-span-2">
-                  <label className={labelClasses}>Edad</label>
-                  <input type="number" className={inputClasses} value={patientData.edad} onChange={e => setPatientData({...patientData, edad: e.target.value})} required />
-                </div>
-                <div className="md:col-span-2">
+                <div className="col-span-1 md:col-span-2">
                   <label className={labelClasses}>DNI</label>
                   <input type="text" className={inputClasses} value={patientData.dni} onChange={e => setPatientData({...patientData, dni: e.target.value})} required />
                 </div>
-                <div className="md:col-span-2">
+                <div className="col-span-1 md:col-span-2">
+                  <label className={labelClasses}>Edad</label>
+                  <input type="number" className={inputClasses} value={patientData.edad} onChange={e => setPatientData({...patientData, edad: e.target.value})} required />
+                </div>
+                <div className="col-span-1 md:col-span-2">
                   <label className={labelClasses}>Legajo</label>
                   <input type="text" className={inputClasses} value={patientData.legajo} onChange={e => setPatientData({...patientData, legajo: e.target.value})} />
                 </div>
-                <div className="md:col-span-2">
+                <div className="col-span-2 md:col-span-2">
                   <label className={labelClasses}>Empresa</label>
                   <select 
                     className={inputClasses} 
@@ -208,26 +208,26 @@ const NewCaseForm: React.FC<NewCaseFormProps> = ({ patients, companies, editingC
                     onChange={e => setPatientData({...patientData, empresa: e.target.value})} 
                     required
                   >
-                    <option value="">Seleccione Empresa...</option>
+                    <option value="">Seleccione...</option>
                     {companies.sort((a,b) => a.name.localeCompare(b.name)).map(c => (
                       <option key={c.id} value={c.name}>{c.name}</option>
                     ))}
                   </select>
                 </div>
-                <div className="md:col-span-3">
+                <div className="col-span-2 md:col-span-3">
                   <label className={labelClasses}>Email</label>
                   <input type="email" className={inputClasses} value={patientData.mail} onChange={e => setPatientData({...patientData, mail: e.target.value})} />
                 </div>
-                <div className="md:col-span-3">
+                <div className="col-span-2 md:col-span-3">
                   <label className={labelClasses}>Teléfono</label>
                   <input type="tel" className={inputClasses} value={patientData.telefono} onChange={e => setPatientData({...patientData, telefono: e.target.value})} required />
                 </div>
               </div>
             </section>
 
-            <section className="space-y-6">
-              <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Información del Certificado Externo</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <section className="space-y-4 md:space-y-6">
+              <h3 className="text-[9px] md:text-[10px] font-black text-slate-800 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Certificado Externo</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                 <div className="relative" ref={cieRef}>
                   <label className={labelClasses}>Diagnóstico Sugerido</label>
                   <input 
@@ -239,29 +239,29 @@ const NewCaseForm: React.FC<NewCaseFormProps> = ({ patients, companies, editingC
                     placeholder="Busque por código o nombre..." 
                   />
                   {showCieDropdown && (
-                    <div className="absolute z-[60] left-0 right-0 mt-2 bg-white border border-slate-200 rounded-2xl shadow-2xl p-2 max-h-[250px] overflow-y-auto">
+                    <div className="absolute z-[60] left-0 right-0 mt-2 bg-white border border-slate-200 rounded-2xl shadow-2xl p-2 max-h-[200px] md:max-h-[250px] overflow-y-auto">
                       {filteredCie.map(item => (
-                        <button key={item.code} type="button" className="w-full text-left px-4 py-3 hover:bg-orange-50 rounded-xl transition-all border-b border-slate-50 last:border-0" onClick={() => { 
+                        <button key={item.code} type="button" className="w-full text-left px-3 md:px-4 py-2.5 md:py-3 hover:bg-orange-50 rounded-xl transition-all border-b border-slate-50 last:border-0" onClick={() => { 
                           setFormData({...formData, diagnosis: item.description, cie10: item.code}); 
                           setCieSearch(item.code); 
                           setShowCieDropdown(false); 
                         }}>
-                          <div className="flex items-center gap-3">
-                            <span className="font-black text-[10px] text-arial-orange bg-orange-100 px-2 py-0.5 rounded min-w-[50px] text-center">{item.code}</span>
-                            <p className="text-[10px] font-black text-slate-700 uppercase">{item.description}</p>
+                          <div className="flex items-center gap-2 md:gap-3">
+                            <span className="font-black text-[9px] text-arial-orange bg-orange-100 px-2 py-0.5 rounded min-w-[45px] text-center shrink-0">{item.code}</span>
+                            <p className="text-[9px] md:text-[10px] font-black text-slate-700 uppercase truncate">{item.description}</p>
                           </div>
                         </button>
                       ))}
                     </div>
                   )}
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3 md:gap-4">
                   <div>
-                    <label className={labelClasses}>Fecha de Inicio Ausentismo</label>
+                    <label className={labelClasses}>Fecha Inicio</label>
                     <input type="date" className={inputClasses} value={formData.startDate} onChange={e => setFormData({...formData, startDate: e.target.value})} />
                   </div>
                   <div>
-                    <label className={labelClasses}>Días Pretendidos</label>
+                    <label className={labelClasses}>Días</label>
                     <input type="number" min="1" className={inputClasses} value={formData.daysSuggested} onChange={e => setFormData({...formData, daysSuggested: parseInt(e.target.value) || 1})} />
                   </div>
                 </div>
@@ -269,10 +269,10 @@ const NewCaseForm: React.FC<NewCaseFormProps> = ({ patients, companies, editingC
               <textarea rows={3} className={inputClasses} value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})} placeholder="Observaciones administrativas..." />
             </section>
 
-            <div className="pt-8 flex justify-end gap-4 border-t border-slate-100">
-              <button type="button" onClick={onCancel} className="px-8 py-4 text-slate-400 font-black text-[10px] uppercase tracking-widest">Descartar</button>
-              <button type="submit" className="px-12 py-4 rounded-2xl bg-slate-900 text-white font-black text-[11px] uppercase shadow-2xl hover:bg-arial-orange transition-all tracking-widest active:scale-95">
-                Enviar a Auditoría Médica
+            <div className="pt-6 md:pt-8 flex flex-col md:flex-row justify-end gap-3 md:gap-4 border-t border-slate-100">
+              <button type="button" onClick={onCancel} className="order-2 md:order-1 px-8 py-3.5 text-slate-400 font-black text-[10px] uppercase tracking-widest">Descartar</button>
+              <button type="submit" className="order-1 md:order-2 px-10 py-4 rounded-2xl bg-slate-900 text-white font-black text-[10px] md:text-[11px] uppercase shadow-2xl hover:bg-arial-orange transition-all tracking-widest active:scale-95">
+                Enviar a Auditoría
               </button>
             </div>
           </form>
