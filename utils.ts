@@ -55,3 +55,19 @@ export const formatDisplayDate = (dateStr: string | undefined): string => {
   
   return d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 };
+
+/**
+ * Convierte un número a texto en español (Especializado para días de licencia)
+ */
+export const numberToSpanishText = (n: number): string => {
+  const units = ['CERO', 'UNO', 'DOS', 'TRES', 'CUATRO', 'CINCO', 'SEIS', 'SIETE', 'OCHO', 'NUEVE', 'DIEZ', 'ONCE', 'DOCE', 'TRECE', 'CATORCE', 'QUINCE', 'DIECISÉIS', 'DIECISIETE', 'DIECIOCHO', 'DIECINUEVE', 'VEINTE'];
+  const tens = ['', '', 'VEINTE', 'TREINTA', 'CUARENTA', 'CINCUENTA', 'SESENTA', 'SETENTA', 'OCHENTA', 'NOVENTA'];
+  
+  if (n <= 20) return units[n];
+  if (n < 30) return n === 20 ? 'VEINTE' : `VEINTI${units[n % 10]}`;
+  if (n < 100) {
+    const unitPart = n % 10;
+    return `${tens[Math.floor(n / 10)]}${unitPart > 0 ? ` Y ${units[unitPart]}` : ''}`;
+  }
+  return n.toString(); // Fallback para números muy grandes
+};
