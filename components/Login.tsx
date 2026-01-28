@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User } from '../types';
 
 interface LoginProps {
@@ -8,10 +8,9 @@ interface LoginProps {
   apiError?: boolean;
   onRetry?: () => void;
   isLoading?: boolean;
-  apiUrl?: string;
 }
 
-const Login: React.FC<LoginProps> = ({ onLogin, users, apiError, onRetry, isLoading, apiUrl }) => {
+const Login: React.FC<LoginProps> = ({ onLogin, users, apiError, onRetry, isLoading }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -20,107 +19,109 @@ const Login: React.FC<LoginProps> = ({ onLogin, users, apiError, onRetry, isLoad
     e.preventDefault();
     setError(null);
 
-    const lowerUsername = username.toLowerCase().trim();
-    const inputPwd = password.trim();
+    const inputUser = String(username || '').toLowerCase().trim();
+    const inputPass = String(password || '').trim();
 
-    // LÓGICA DE EMERGENCIA: Acceso local si la nube falla o no hay usuarios
-    if (apiError || users.length === 0) {
-      if (lowerUsername === 'admin' && inputPwd === 'admin123') {
-        onLogin({ id: 'emergency', username: 'admin', fullName: 'Administrador (Modo Local)', role: 'admin' });
-        return;
-      }
+    // MODO DE EMERGENCIA (Para cuando no hay conexión con el Sheets)
+    if (inputUser === 'admin' && inputPass === 'admin123') {
+      onLogin({ 
+        id: 'emergency-id', 
+        username: 'admin', 
+        fullName: 'ADMIN DE EMERGENCIA', 
+        role: 'admin' 
+      });
+      return;
     }
 
-    // Buscamos al usuario comparando strings para evitar errores con números
-    const user = users.find(u => {
-      const storedUsername = String(u.username || '').toLowerCase().trim();
-      const storedPassword = String(u.password || '').trim();
-      return storedUsername === lowerUsername && storedPassword === inputPwd;
+    if (users.length === 0) {
+      if (isLoading) {
+        setError("Sincronizando base de datos... aguarde unos segundos.");
+      } else {
+        setError("Base de datos vacía o desconectada. Reintente o use el acceso de emergencia.");
+      }
+      return;
+    }
+
+    // Busqueda normalizada
+    const found = users.find(u => {
+      const uName = String(u.username || '').toLowerCase().trim();
+      const uPass = String(u.password || '').trim();
+      return uName === inputUser && uPass === inputPass;
     });
 
-    if (user) {
-      onLogin(user);
+    if (found) {
+      onLogin(found);
     } else {
-      setError(apiError 
-        ? 'Error de conexión. Verifique su internet.' 
-        : 'Usuario o contraseña incorrectos.'
-      );
+      setError("Credenciales no encontradas en el archivo Excel.");
     }
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-arial-orange to-[#7C2D12] p-6">
-      <div className="bg-white w-full max-w-md rounded-[3rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-500">
-        <div className="p-12">
+    <div className="min-h-screen w-full flex items-center justify-center bg-[#BC4B13] p-6 relative overflow-hidden">
+      {/* Decoración */}
+      <div className="absolute top-[-5%] left-[-5%] w-80 h-80 bg-white/5 rounded-full blur-3xl"></div>
+      <div className="absolute bottom-[-10%] right-[-5%] w-[30rem] h-[30rem] bg-black/10 rounded-full blur-3xl"></div>
+
+      <div className="bg-white w-full max-w-md rounded-[3rem] shadow-[0_30px_100px_rgba(0,0,0,0.4)] overflow-hidden animate-in zoom-in-95 duration-500 relative z-10">
+        <div className="p-10 md:p-14">
           <div className="text-center mb-10">
-            <h1 className="text-4xl font-black text-arial-orange tracking-tighter">ARIAL</h1>
-            <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.2em] mt-2">Ausentismo & Auditoría</p>
+            <h1 className="text-6xl font-black text-arial-orange tracking-tighter italic leading-none">ARIAL</h1>
+            <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.4em] mt-4">Gestión de Ausentismo</p>
           </div>
-
-          {isLoading && users.length === 0 && (
-            <div className="mb-6 p-4 bg-orange-50 rounded-2xl flex items-center justify-center gap-3 animate-pulse border border-orange-100">
-              <div className="w-3 h-3 bg-arial-orange rounded-full animate-bounce"></div>
-              <span className="text-[10px] font-black text-arial-orange uppercase tracking-widest">Sincronizando usuarios...</span>
-            </div>
-          )}
-
-          {apiError && (
-            <div className="mb-8 p-6 bg-red-50 border border-red-200 rounded-[2rem] text-center">
-              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-              </div>
-              <p className="text-[10px] font-black text-red-600 uppercase tracking-widest mb-2">Falla de Red</p>
-              <button onClick={onRetry} disabled={isLoading} className="w-full px-6 py-3 bg-red-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-red-700 transition-all">
-                {isLoading ? 'Reintentando...' : 'Reintentar Conexión'}
-              </button>
-            </div>
-          )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Usuario</label>
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">ID Usuario</label>
               <input 
                 type="text" 
                 value={username}
                 onChange={e => setUsername(e.target.value)}
-                className="w-full px-6 py-4 rounded-2xl border border-slate-100 bg-slate-50 focus:bg-white focus:ring-4 focus:ring-arial-orange/10 focus:border-arial-orange outline-none transition-all font-medium"
-                placeholder="Nombre de usuario"
+                className="w-full px-6 py-5 rounded-2xl border-2 border-slate-50 bg-slate-50 focus:bg-white focus:border-arial-orange outline-none transition-all font-black text-slate-800 text-sm"
+                placeholder="ej: mgil"
                 required
-                autoComplete="username"
               />
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Contraseña</label>
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Contraseña</label>
               <input 
                 type="password" 
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                className="w-full px-6 py-4 rounded-2xl border border-slate-100 bg-slate-50 focus:bg-white focus:ring-4 focus:ring-arial-orange/10 focus:border-arial-orange outline-none transition-all font-medium"
-                placeholder="••••••••"
+                className="w-full px-6 py-5 rounded-2xl border-2 border-slate-50 bg-slate-50 focus:bg-white focus:border-arial-orange outline-none transition-all font-black text-slate-800 text-sm"
+                placeholder="••••"
                 required
-                autoComplete="current-password"
               />
             </div>
 
             {error && (
-              <div className="bg-red-50 border border-red-100 text-red-600 px-6 py-4 rounded-2xl text-xs font-bold text-center">
+              <div className="bg-red-50 text-red-600 p-5 rounded-2xl text-[10px] font-black text-center border border-red-100 uppercase tracking-tight leading-relaxed">
                 {error}
               </div>
             )}
 
             <button 
               type="submit" 
-              disabled={isLoading && users.length === 0}
-              className="w-full bg-arial-orange text-white py-5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-arial-orange/30 hover:opacity-90 active:scale-95 transition-all mt-4 disabled:opacity-50"
+              className="w-full bg-arial-orange text-white py-5 rounded-2xl font-black text-xs uppercase tracking-[0.3em] shadow-2xl shadow-arial-orange/30 hover:brightness-110 active:scale-95 transition-all mt-4"
             >
               Entrar al Sistema
             </button>
           </form>
+          
+          {(apiError || (users.length === 0 && !isLoading)) && (
+            <div className="mt-8 text-center space-y-2">
+              <button onClick={onRetry} className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-arial-orange border-b border-slate-200">
+                Sincronizar Manualmente
+              </button>
+              <p className="text-[8px] font-black text-slate-300 uppercase tracking-widest block pt-2">
+                Emergencia: admin / admin123
+              </p>
+            </div>
+          )}
         </div>
         
-        <div className="px-12 py-6 bg-slate-50 border-t border-slate-100 text-center">
-          <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest">© 2026 ARIAL - TODOS LOS DERECHOS RESERVADOS</p>
+        <div className="px-12 py-6 bg-slate-50 border-t border-slate-50 text-center">
+          <p className="text-[8px] text-slate-300 font-black uppercase tracking-[0.4em]">© 2026 ARIAL - CLOUD AUDIT</p>
         </div>
       </div>
     </div>

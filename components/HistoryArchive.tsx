@@ -7,8 +7,8 @@ interface HistoryArchiveProps {
   patients: Patient[];
   cases: AbsenteeismCase[];
   currentUser: User;
-  // Fix: added optional status parameter to match CaseDetail and resolve argument mismatch in App.tsx
-  onAddEvolution: (caseId: string, evolution: EvolutionEntry, status?: string) => void;
+  /* Fix: explicitly use AbsenteeismCase status literal types instead of generic string */
+  onAddEvolution: (caseId: string, evolution: EvolutionEntry, status?: AbsenteeismCase['status']) => void;
   onDeleteCase: (id: string) => void;
   preselectedPatientId?: string | null;
 }
@@ -66,6 +66,8 @@ const HistoryArchive: React.FC<HistoryArchiveProps> = ({ patients, cases, curren
   if (selectedPatientId && consolidatedCase && selectedPatient) {
     return (
       <CaseDetail 
+        // Passing the full cases list as required by CaseDetailProps
+        allCases={cases}
         caseData={consolidatedCase}
         patient={selectedPatient}
         currentUser={currentUser}

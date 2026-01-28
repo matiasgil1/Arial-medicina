@@ -16,7 +16,7 @@ const StatusBadge = ({ status }: { status: string }) => {
     'ALTA_MEDICA': { 
       bg: 'bg-emerald-50', 
       text: 'text-emerald-700', 
-      border: 'border-emerald-200',
+      border: 'border-emerald-100',
       accent: 'bg-emerald-500',
       labelTop: 'ALTA',
       labelBottom: 'MÉDICA'
@@ -24,7 +24,7 @@ const StatusBadge = ({ status }: { status: string }) => {
     'EN_SEGUIMIENTO': { 
       bg: 'bg-orange-50', 
       text: 'text-orange-700', 
-      border: 'border-orange-200',
+      border: 'border-orange-100',
       accent: 'bg-orange-500',
       labelTop: 'EN',
       labelBottom: 'SEGUIMIENTO'
@@ -32,7 +32,7 @@ const StatusBadge = ({ status }: { status: string }) => {
     'PENDIENTE_AUDITORIA': { 
       bg: 'bg-blue-50', 
       text: 'text-blue-700', 
-      border: 'border-blue-200',
+      border: 'border-blue-100',
       accent: 'bg-blue-500',
       labelTop: 'PENDIENTE',
       labelBottom: 'AUDITORÍA'
@@ -40,9 +40,9 @@ const StatusBadge = ({ status }: { status: string }) => {
   }[status] || { bg: 'bg-slate-50', text: 'text-slate-500', border: 'border-slate-200', accent: 'bg-slate-400', labelTop: '---', labelBottom: '---' };
 
   return (
-    <div className={`inline-flex flex-col items-center justify-center px-3 py-1.5 rounded-xl border ${config.bg} ${config.border} shadow-sm relative overflow-hidden group min-w-[85px]`}>
-      <div className={`absolute top-0 left-0 w-1 h-full ${config.accent}`}></div>
-      <span className={`text-[7px] font-black uppercase tracking-[0.2em] leading-none mb-0.5 ${config.text} opacity-60`}>{config.labelTop}</span>
+    <div className={`inline-flex flex-col items-center justify-center px-4 py-2 rounded-full border ${config.bg} ${config.border} shadow-sm relative overflow-hidden group min-w-[100px] transition-transform active:scale-95`}>
+      <div className={`absolute top-0 left-0 w-1 h-full ${config.accent} opacity-40`}></div>
+      <span className={`text-[7px] font-black uppercase tracking-[0.25em] leading-none mb-0.5 ${config.text} opacity-60`}>{config.labelTop}</span>
       <span className={`text-[8px] font-black uppercase tracking-tight leading-none ${config.text}`}>{config.labelBottom}</span>
     </div>
   );
@@ -50,9 +50,6 @@ const StatusBadge = ({ status }: { status: string }) => {
 
 const Dashboard: React.FC<DashboardProps> = ({ cases, patients, onSelectCase, onEditCase, onDeleteCase }) => {
   const today = new Date().toISOString().split('T')[0];
-
-  const getPatient = (patientId: string) => 
-    patients.find(p => p.id === patientId);
 
   const queueCases = useMemo(() => {
     return cases.filter(c => {
@@ -125,7 +122,7 @@ const Dashboard: React.FC<DashboardProps> = ({ cases, patients, onSelectCase, on
               ) : queueCases.map((c) => {
                 const latest = getLatestEvolution(c.evolutions);
                 if (!latest) return null;
-                const patient = getPatient(c.patientId);
+                const patient = patients.find(p => p.id === c.patientId);
                 const isNew = c.status === 'PENDIENTE_AUDITORIA';
                 const isOverdue = !isNew && latest.endDate < today;
 
@@ -138,21 +135,21 @@ const Dashboard: React.FC<DashboardProps> = ({ cases, patients, onSelectCase, on
                     <td className="px-6 lg:px-10 py-5 lg:py-6">
                       <div className="flex items-center gap-4">
                         <div className={`w-10 h-10 lg:w-11 lg:h-11 rounded-xl flex items-center justify-center font-black text-sm uppercase shrink-0 shadow-sm ${isNew ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-400'}`}>
-                          {patient?.nombre?.charAt(0)}
+                          {patient?.nombre?.charAt(0) || '?'}
                         </div>
                         <div className="min-w-0">
                           <div className="font-black text-slate-800 text-sm leading-tight uppercase tracking-tight truncate">
-                            {patient ? `${patient.nombre} ${patient.apellido}` : '---'}
+                            {patient ? `${patient.nombre} ${patient.apellido}` : 'PENDIENTE DE SINCRONIZACIÓN'}
                           </div>
                           <div className="text-[9px] text-slate-400 font-black uppercase tracking-widest mt-0.5 truncate">
-                            {patient?.empresa}
+                            {patient?.empresa || 'Empresa No Identificada'}
                           </div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 lg:px-10 py-5 lg:py-6">
                       <div className="text-[10px] lg:text-[11px] text-slate-600 font-bold truncate max-w-[180px] lg:max-w-[250px] bg-slate-50 px-3 py-2 rounded-xl border border-slate-100 group-hover:bg-white transition-colors">
-                        {latest.diagnosis}
+                        {latest.diagnosis || 'S/D'}
                       </div>
                     </td>
                     <td className="px-6 lg:px-10 py-5 lg:py-6 text-center">
@@ -174,14 +171,6 @@ const Dashboard: React.FC<DashboardProps> = ({ cases, patients, onSelectCase, on
               })}
             </tbody>
           </table>
-        </div>
-      </div>
-      
-      {/* Mobile-only scroll hint */}
-      <div className="lg:hidden flex justify-center py-2">
-        <div className="flex items-center gap-2 px-4 py-2 bg-slate-200/50 rounded-full">
-           <svg className="w-3 h-3 text-slate-400 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
-           <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Desliza para ver más</span>
         </div>
       </div>
     </div>
