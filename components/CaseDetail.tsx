@@ -22,6 +22,12 @@ const CaseDetail: React.FC<CaseDetailProps> = ({ caseData, patient, currentUser,
   
   const needsAction = !isReadOnly && (caseData.status === 'PENDIENTE_AUDITORIA' || caseData.status === 'EN_SEGUIMIENTO');
 
+  // Detección robusta de entradas administrativas/admisión
+  const isAdmissionEntry = (user: string) => {
+    const u = String(user || '').toLowerCase();
+    return u.includes('adm');
+  };
+
   const auditStartDate = useMemo(() => {
     if (!latest) return new Date().toISOString().split('T')[0];
     return caseData.status === 'PENDIENTE_AUDITORIA' ? latest.startDate : getNextStartDate(latest.endDate);
@@ -91,7 +97,7 @@ const CaseDetail: React.FC<CaseDetailProps> = ({ caseData, patient, currentUser,
     const episodes: EvolutionEntry[][] = [];
     let currentEpisode: EvolutionEntry[] = [];
     sorted.forEach((ev) => {
-      if (ev.user.includes('Admisión')) {
+      if (isAdmissionEntry(ev.user)) {
         if (currentEpisode.length > 0) episodes.push(currentEpisode);
         currentEpisode = [ev];
       } else {
@@ -101,6 +107,15 @@ const CaseDetail: React.FC<CaseDetailProps> = ({ caseData, patient, currentUser,
     if (currentEpisode.length > 0) episodes.push(currentEpisode);
     return episodes.reverse();
   }, [caseData.evolutions]);
+
+  const handleWhatsApp = () => {
+    const phoneStr = String(patient.telefono || '');
+    const cleanPhone = phoneStr.replace(/\D/g, '');
+    const message = `Hola ${patient.apellido} ${patient.nombre}, nos comunicamos de Arial Medicina Laboral con respecto a tu seguimiento`;
+    if (cleanPhone) {
+      window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`, '_blank');
+    }
+  };
 
   return (
     <div className="space-y-4 md:space-y-6 animate-in fade-in duration-500 pb-20 max-w-7xl mx-auto px-1 md:px-0">
@@ -115,12 +130,10 @@ const CaseDetail: React.FC<CaseDetailProps> = ({ caseData, patient, currentUser,
         </button>
       </div>
 
-      {/* RENDER CERTIFICADO A5 HORIZONTAL (MITAD DE A4) */}
+      {/* RENDER CERTIFICADO A5 HORIZONTAL */}
       {selectedEvoForCert && (
         <div className="fixed left-[-9999px] top-0">
           <div ref={certificateRef} className="bg-white p-6 font-serif border-[0.5mm] border-slate-200" style={{ width: '210mm', height: '148.5mm', color: '#000', boxSizing: 'border-box', position: 'relative' }}>
-            
-            {/* CABECERA */}
             <div className="flex justify-between items-start mb-4">
               <div className="flex flex-col">
                 <div className="flex items-center gap-2">
@@ -141,7 +154,6 @@ const CaseDetail: React.FC<CaseDetailProps> = ({ caseData, patient, currentUser,
               </div>
             </div>
 
-            {/* CUERPO - DATOS PERSONALES */}
             <div className="grid grid-cols-12 gap-x-2 gap-y-2 text-[9px] mb-4">
               <div className="col-span-1 flex items-center uppercase font-bold">Empresa</div>
               <div className="col-span-5 border-[0.3mm] border-black px-2 py-1.5 font-bold uppercase bg-white truncate">{patient.empresa}</div>
@@ -154,7 +166,6 @@ const CaseDetail: React.FC<CaseDetailProps> = ({ caseData, patient, currentUser,
               <div className="col-span-6 border-[0.3mm] border-black px-2 py-1.5 font-bold bg-white">SIN DEFINIR</div>
             </div>
 
-            {/* FILA DE ATENCIÓN */}
             <div className="flex items-center gap-4 text-[9px] mb-4">
               <span className="font-bold uppercase">Informe: Fecha de atención</span>
               <div className="border-[0.3mm] border-black px-3 py-1 font-bold bg-white">{selectedEvoForCert.timestamp.split(' ')[0]}</div>
@@ -167,7 +178,6 @@ const CaseDetail: React.FC<CaseDetailProps> = ({ caseData, patient, currentUser,
               </div>
             </div>
 
-            {/* RESOLUCIÓN MÉDICA */}
             <div className="space-y-2 text-[10px] mb-4 border-y-[0.3mm] border-black py-3">
                <div className="flex items-center gap-10">
                   <span className="font-bold uppercase">De acuerdo al examen y diagnóstico se resuelve: <strong>Inasistencia Justificada:</strong></span>
@@ -185,7 +195,6 @@ const CaseDetail: React.FC<CaseDetailProps> = ({ caseData, patient, currentUser,
                </div>
             </div>
 
-            {/* PERIODO DE LICENCIA */}
             <div className="grid grid-cols-4 gap-4 text-[10px] mb-4">
               <div>
                 <span className="font-bold uppercase block mb-1">Desde:</span>
@@ -205,7 +214,6 @@ const CaseDetail: React.FC<CaseDetailProps> = ({ caseData, patient, currentUser,
               </div>
             </div>
 
-            {/* DIAGNÓSTICO Y OBSERVACIONES */}
             <div className="text-[10px] space-y-2 mb-4">
               <div className="flex gap-2">
                 <span className="font-bold uppercase shrink-0">Diagnóstico Presuntivo:</span>
@@ -217,7 +225,6 @@ const CaseDetail: React.FC<CaseDetailProps> = ({ caseData, patient, currentUser,
               </div>
             </div>
 
-            {/* FIRMAS Y PIE */}
             <div className="absolute bottom-6 left-6 right-6">
                <div className="grid grid-cols-3 gap-8 text-[8px] font-black uppercase text-center items-end">
                   <div className="border-t-[0.3mm] border-black pt-1">Firma del empleado</div>
@@ -256,7 +263,18 @@ const CaseDetail: React.FC<CaseDetailProps> = ({ caseData, patient, currentUser,
                 <div className="space-y-0.5"><p className="text-[8px] font-black text-slate-300 uppercase">DNI</p><p className="text-xs font-black text-slate-700">{patient.dni}</p></div>
                 <div className="space-y-0.5"><p className="text-[8px] font-black text-slate-300 uppercase">Edad</p><p className="text-xs font-black text-slate-700">{patient.edad} años</p></div>
                 <div className="space-y-0.5"><p className="text-[8px] font-black text-slate-300 uppercase">Legajo</p><p className="text-xs font-black text-slate-700">{patient.legajo}</p></div>
-                <div className="space-y-0.5"><p className="text-[8px] font-black text-slate-300 uppercase">Teléfono</p><p className="text-xs font-black text-slate-700">{patient.telefono}</p></div>
+                <div className="space-y-0.5">
+                  <p className="text-[8px] font-black text-slate-300 uppercase">Teléfono</p>
+                  <p className="text-xs font-black text-slate-700">{patient.telefono}</p>
+                </div>
+              </div>
+              <div className="flex justify-center pt-2">
+                <button 
+                  onClick={handleWhatsApp} 
+                  className="no-print w-full max-w-[200px] py-2.5 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 transition-all shadow-md active:scale-95 flex items-center justify-center text-[8px] font-black uppercase tracking-[0.25em]"
+                >
+                  CONTACTAR
+                </button>
               </div>
             </div>
           </div>
@@ -296,12 +314,12 @@ const CaseDetail: React.FC<CaseDetailProps> = ({ caseData, patient, currentUser,
                     <div className={`px-6 md:px-10 py-4 md:py-6 border-b border-slate-50 flex justify-between items-center ${isClosed ? 'bg-emerald-50/30' : 'bg-slate-50/30'}`}>
                         <div className="flex items-center gap-2 md:gap-4">
                            <div className={`w-2 h-2 md:w-3 md:h-3 rounded-full ${isClosed ? 'bg-emerald-500' : 'bg-orange-500 animate-pulse'}`}></div>
-                           <h3 className="font-black text-slate-800 uppercase tracking-[0.15em] text-[9px] md:text-[11px]">Caso: {formatDisplayDate(episode.find(e => e.user.includes('Admisión'))?.startDate)}</h3>
+                           <h3 className="font-black text-slate-800 uppercase tracking-[0.15em] text-[9px] md:text-[11px]">Caso: {formatDisplayDate(episode.find(e => isAdmissionEntry(e.user))?.startDate)}</h3>
                         </div>
                     </div>
                     <div className="p-6 md:p-10 space-y-8">
                         {[...episode].reverse().map((ev) => {
-                          const isAdm = ev.user.includes('Admisión');
+                          const isAdm = isAdmissionEntry(ev.user);
                           const isDis = ev.notes.includes('[ALTA MÉDICA]');
                           return (
                             <div key={ev.id} className="relative pl-8 md:pl-12 border-l-2 border-slate-100 pb-2">
@@ -314,7 +332,7 @@ const CaseDetail: React.FC<CaseDetailProps> = ({ caseData, patient, currentUser,
                                       <button 
                                         onClick={() => exportCertificatePDF(ev)}
                                         className="no-print p-2 bg-slate-100 rounded-lg text-slate-400 hover:bg-arial-orange hover:text-white transition-all flex items-center gap-2"
-                                        title="Generar Certificado A5 Horizontal"
+                                        title="Generar Certificado A5"
                                       >
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                                         <span className="hidden md:block text-[8px] font-black uppercase">Certificado A5</span>
@@ -326,7 +344,7 @@ const CaseDetail: React.FC<CaseDetailProps> = ({ caseData, patient, currentUser,
                                     <p className="text-[10px] md:text-[11px] font-medium text-slate-500 italic leading-relaxed mb-4">{ev.notes}</p>
                                     <div className="grid grid-cols-3 gap-4 pt-4 border-t border-slate-50">
                                        <div className="space-y-0.5"><p className="text-[7px] font-black text-slate-300 uppercase">Desde</p><p className="text-[9px] font-black text-slate-600">{formatDisplayDate(ev.startDate)}</p></div>
-                                       <div className="space-y-0.5"><p className="text-[7px] font-black text-slate-300 uppercase">Días</p><p className="text-[9px] font-black text-arial-orange">{ev.daysAuthorized}</p></div>
+                                       <div className="space-y-0.5"><p className="text-[7px] font-black text-slate-300 uppercase">Días</p><p className="text-[9px] font-black text-arial-orange">{isAdmissionEntry(ev.user) ? ev.daysSuggested : ev.daysAuthorized}</p></div>
                                        <div className="space-y-0.5"><p className="text-[7px] font-black text-slate-300 uppercase">Hasta</p><p className="text-[9px] font-black text-slate-600">{formatDisplayDate(ev.endDate)}</p></div>
                                     </div>
                                 </div>

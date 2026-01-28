@@ -257,7 +257,7 @@ const Statistics: React.FC<StatisticsProps> = ({ cases, patients, users, compani
       alternateRowStyles: { fillColor: [250, 250, 250] }
     });
 
-    doc.save(`Arial_Reporte_Estadistico_${Date.now()}.pdf`);
+    doc.save(`Arial_Reporte_Global_${Date.now()}.pdf`);
   };
 
   useEffect(() => {
@@ -452,7 +452,7 @@ const Statistics: React.FC<StatisticsProps> = ({ cases, patients, users, compani
               <thead>
                 <tr className="text-slate-400 text-[8px] font-black uppercase tracking-widest border-b border-slate-50">
                   <th className="px-6 md:px-10 py-5">Colaborador / Diagnóstico</th>
-                  <th className="px-4 md:px-6 py-5">Médicos</th>
+                  <th className="px-4 md:px-6 py-5">Auditores</th>
                   <th className="px-4 md:px-6 py-5">Empresa</th>
                   <th className="px-4 md:px-6 py-5 text-center">Auditado</th>
                   <th className="px-6 md:px-10 py-5 text-center">Ahorro</th>
@@ -468,7 +468,7 @@ const Statistics: React.FC<StatisticsProps> = ({ cases, patients, users, compani
                       <p className="text-[8px] md:text-[9px] font-semibold text-slate-400 mt-0.5 uppercase truncate max-w-[150px]">{d.diagnosis}</p>
                     </td>
                     <td className="px-4 md:px-6 py-5">
-                      <span className="text-[8px] md:text-[9px] font-black text-arial-orange bg-orange-50/50 px-3 py-1.5 rounded-lg inline-block truncate max-w-[150px]">{d.auditorString}</span>
+                      <span className="text-[8px] md:text-[9px] font-black text-arial-orange bg-orange-50/50 px-3 py-1.5 rounded-lg inline-block whitespace-normal">{d.auditorString}</span>
                     </td>
                     <td className="px-4 md:px-6 py-5 text-[8px] md:text-[9px] font-bold text-slate-400 uppercase truncate max-w-[100px]">{d.empresa}</td>
                     <td className="px-4 md:px-6 py-5 text-center font-bold text-slate-500 text-[10px] md:text-[11px]">{d.suggested} / {d.authorized}</td>

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Patient, AbsenteeismCase, EvolutionEntry, User, Company } from '../types';
-import { getLatestEvolution } from '../utils';
+import { getLatestEvolution, addDaysToDate } from '../utils';
 import { CIE10_COMMON_LIST } from '../constants';
 
 interface NewCaseFormProps {
@@ -116,7 +116,7 @@ const NewCaseForm: React.FC<NewCaseFormProps> = ({ patients, companies, editingC
       daysSuggested: formData.daysSuggested,
       daysAuthorized: 0,
       startDate: formData.startDate,
-      endDate: formData.startDate, 
+      endDate: addDaysToDate(formData.startDate, formData.daysSuggested),
       notes: formData.notes
     };
 
