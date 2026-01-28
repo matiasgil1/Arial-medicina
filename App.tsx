@@ -13,6 +13,7 @@ import ControlAgenda from './components/ControlAgenda';
 import CompanyManager from './components/CompanyManager';
 import Toast from './components/Toast';
 import Login from './components/Login';
+import { Analytics } from '@vercel/analytics/react';
 
 const API_URL = (import.meta as any).env?.VITE_API_URL || "https://script.google.com/macros/s/AKfycbwuxxUytaR0-6_r7VddzU5yjfQqfG05p6Q6TPs_YjRylpxz_R1bmb71C_egtvajQ5tcUg/exec"; 
 const STORAGE_KEY_USER = 'arial_current_user';
@@ -268,6 +269,7 @@ const App: React.FC = () => {
           </div>
         </main>
       </div>
+      <Analytics />
     </div>
   );
 };
