@@ -43,8 +43,6 @@
         .bg-arial-orange { background-color: #BC4B13; }
         .border-arial-orange { border-color: #BC4B13; }
         
-        .pdf-header { display: none; }
-        
         @media print {
           .no-print { display: none !important; }
           .pdf-only { display: block !important; }
@@ -57,19 +55,25 @@
           page-break-before: always;
         }
 
-        /* Scrollbar styling for production */
+        /* Scrollbar visible y estilizada */
         ::-webkit-scrollbar {
-          width: 6px;
+          width: 8px;
+          height: 8px;
         }
         ::-webkit-scrollbar-track {
-          background: #f1f5f9;
+          background: #f8fafc;
         }
         ::-webkit-scrollbar-thumb {
-          background: #cbd5e1;
+          background: #e2e8f0;
           border-radius: 10px;
         }
         ::-webkit-scrollbar-thumb:hover {
           background: #BC4B13;
+        }
+
+        /* Indicador de scroll horizontal */
+        .table-scroll-container {
+            position: relative;
         }
     </style>
 <script type="importmap">
@@ -87,7 +91,6 @@
 </head>
 <body class="bg-slate-50 text-slate-900">
     <div id="root"></div>
-    <!-- Vite entry point -->
     <script type="module" src="/index.tsx"></script>
 </body>
 </html>

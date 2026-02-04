@@ -72,7 +72,7 @@ const SmartSelect: React.FC<{
               }`}
             />
           </div>
-          <div className="max-h-52 overflow-y-auto scrollbar-hide">
+          <div className="max-h-52 overflow-y-auto">
             {filteredOptions.length === 0 ? (
               <p className="p-4 text-[9px] text-slate-400 italic font-bold">Sin resultados</p>
             ) : (
@@ -108,6 +108,11 @@ const Statistics: React.FC<StatisticsProps> = ({ cases, patients, users, compani
   const [filterMedico, setFilterMedico] = useState('todos');
   const [filterPacienteId, setFilterPacienteId] = useState('todos');
   const [isMobilePanelOpen, setIsMobilePanelOpen] = useState(false);
+
+  const [tableSearch, setTableSearch] = useState('');
+  const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' | null }>({ key: 'lastUpdate', direction: 'desc' });
+  const [tableCurrentPage, setTableCurrentPage] = useState(1);
+  const tableItemsPerPage = 10;
 
   const barChartRef = useRef<HTMLCanvasElement>(null);
   const pieChartRef = useRef<HTMLCanvasElement>(null);
@@ -152,7 +157,8 @@ const Statistics: React.FC<StatisticsProps> = ({ cases, patients, users, compani
       const diagnosis = admission?.diagnosis || evolutions[evolutions.length - 1]?.diagnosis || 'S/D';
       
       return {
-        ...c,
+        id: c.id,
+        patientId: c.patientId,
         patientName: patient ? `${patient.nombre} ${patient.apellido}` : 'Desconocido',
         diagnosis,
         auditorString: Array.from(doctorsMap.entries()).map(([n, d]) => `Dr. ${n} (${d}d)`).join(', ') || 'Pendiente',
@@ -183,7 +189,6 @@ const Statistics: React.FC<StatisticsProps> = ({ cases, patients, users, compani
     };
   }, [processedData]);
 
-  // MANEJADORES DE EXPORTACIÓN
   const handleExportExcel = () => {
     const exportData = processedData.map(d => ({
       Colaborador: d.patientName,
@@ -196,76 +201,37 @@ const Statistics: React.FC<StatisticsProps> = ({ cases, patients, users, compani
     }));
     const ws = (window as any).XLSX.utils.json_to_sheet(exportData);
     const wb = (window as any).XLSX.utils.book_new();
-    (window as any).XLSX.utils.book_append_sheet(wb, ws, "Estadisticas");
-    (window as any).XLSX.writeFile(wb, `Arial_Estadisticas_${new Date().toISOString().split('T')[0]}.xlsx`);
+    (window as any).XLSX.utils.book_append_sheet(wb, ws, "Auditoria");
+    const filename = `Arial_Reporte_${filterEmpresa !== 'todas' ? filterEmpresa : 'Global'}_${filterPeriod}.xlsx`;
+    (window as any).XLSX.writeFile(wb, filename);
   };
 
   const handleExportPDF = () => {
     const { jsPDF } = (window as any).jspdf;
     const doc = new jsPDF('landscape');
-    
-    // Header
     doc.setFontSize(22);
-    doc.setTextColor(188, 75, 19); // arial-orange
+    doc.setTextColor(188, 75, 19); 
     doc.text("ARIAL - Auditoría Médica", 14, 20);
     doc.setFontSize(10);
     doc.setTextColor(100, 116, 139);
-    doc.text(`Reporte Estadístico Consolidado | Generado: ${new Date().toLocaleString()}`, 14, 28);
-
-    // KPI Cards en el PDF
-    const kpiData = [
-      { label: 'SOLICITADOS', value: kpis.totalSuggested },
-      { label: 'VALIDADOS', value: kpis.totalAuthorized },
-      { label: 'AHORRO REAL', value: kpis.totalSaved },
-      { label: 'EFICACIA', value: `${kpis.efficiency}%` }
-    ];
-
-    let startX = 14;
-    kpiData.forEach((kpi, i) => {
-      // Dibujar caja
-      doc.setFillColor(248, 250, 252); // slate-50
-      doc.roundedRect(startX + (i * 68), 35, 62, 25, 4, 4, 'F');
-      
-      // Texto label
-      doc.setFontSize(7);
-      doc.setTextColor(148, 163, 184); // slate-400
-      doc.text(kpi.label, startX + (i * 68) + 5, 42);
-      
-      // Texto valor
-      doc.setFontSize(16);
-      doc.setTextColor(30, 41, 59); // slate-800
-      doc.text(String(kpi.value), startX + (i * 68) + 5, 53);
-    });
-
-    const tableData = processedData.map(d => [
-      d.patientName, 
-      d.empresa, 
-      d.diagnosis, 
-      d.auditorString, 
-      d.suggested, 
-      d.authorized, 
-      `${Math.abs(d.ahorro)} d`
-    ]);
-
+    doc.text(`Filtro: ${filterEmpresa} | Periodo: ${filterPeriod} | Generado: ${new Date().toLocaleString()}`, 14, 28);
+    const tableData = processedData.map(d => [d.patientName, d.empresa, d.diagnosis, d.auditorString, d.suggested, d.authorized, `${d.ahorro} d`]);
     (doc as any).autoTable({
       head: [['Colaborador', 'Empresa', 'Diagnóstico', 'Auditores', 'Sol.', 'Aud.', 'Ahorro']],
       body: tableData,
-      startY: 70,
+      startY: 40,
       theme: 'grid',
       headStyles: { fillColor: [188, 75, 19], fontSize: 9, fontStyle: 'bold' },
       styles: { fontSize: 8, cellPadding: 3 },
       alternateRowStyles: { fillColor: [250, 250, 250] }
     });
-
-    doc.save(`Arial_Reporte_Global_${Date.now()}.pdf`);
+    doc.save(`Arial_Reporte_${filterEmpresa}_${Date.now()}.pdf`);
   };
 
   useEffect(() => {
     if (barInstance.current) barInstance.current.destroy();
     if (pieInstance.current) pieInstance.current.destroy();
-
     const chartFont = { size: 10, weight: 'bold', family: 'Inter' };
-
     if (barChartRef.current) {
       barInstance.current = new (window as any).Chart(barChartRef.current, {
         type: 'bar',
@@ -282,24 +248,17 @@ const Statistics: React.FC<StatisticsProps> = ({ cases, patients, users, compani
           responsive: true,
           maintainAspectRatio: false,
           plugins: { legend: { display: false } },
-          layout: { padding: { top: 10, bottom: 5, left: 10, right: 10 } },
           scales: { 
             y: { display: false },
-            x: { 
-              grid: { display: false }, 
-              border: { display: false }, 
-              ticks: { font: chartFont, color: '#94a3b8', padding: 10 } 
-            }
+            x: { grid: { display: false }, border: { display: false }, ticks: { font: chartFont, color: '#94a3b8', padding: 10 } }
           }
         }
       });
     }
-
     if (pieChartRef.current) {
       const counts: Record<string, number> = {};
       processedData.forEach(d => { counts[d.diagnosis] = (counts[d.diagnosis] || 0) + 1; });
       const top5 = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5);
-
       pieInstance.current = new (window as any).Chart(pieChartRef.current, {
         type: 'doughnut',
         data: {
@@ -318,13 +277,7 @@ const Statistics: React.FC<StatisticsProps> = ({ cases, patients, users, compani
           plugins: { 
             legend: { 
               position: 'bottom', 
-              labels: { 
-                boxWidth: 6, 
-                padding: 10, 
-                font: { size: 8, weight: '600', family: 'Inter' },
-                color: '#64748b',
-                usePointStyle: true
-              } 
+              labels: { boxWidth: 6, padding: 10, font: { size: 8, weight: '600', family: 'Inter' }, color: '#64748b', usePointStyle: true } 
             } 
           }
         }
@@ -332,151 +285,45 @@ const Statistics: React.FC<StatisticsProps> = ({ cases, patients, users, compani
     }
   }, [processedData, kpis]);
 
-  const periodOptions = [
-    { value: 'todo', label: 'Historial' },
-    { value: 'este-mes', label: 'Este Mes' },
-    { value: 'mes-pasado', label: 'Mes Pasado' },
-    { value: 'anio-actual', label: 'Año Fiscal' }
-  ];
-
+  const periodOptions = [{ value: 'todo', label: 'Historial Completo' }, { value: 'este-mes', label: 'Mes en Curso' }, { value: 'mes-pasado', label: 'Mes Anterior' }, { value: 'anio-actual', label: 'Año Fiscal 2026' }];
   const empresaOptions = useMemo(() => {
     const uniques = (companies || []).map(c => c.name).sort((a, b) => a.localeCompare(b));
     return [{ value: 'todas', label: 'Todas las Empresas' }, ...uniques.map(e => ({ value: e, label: e }))];
   }, [companies]);
 
-  const auditorOptions = useMemo(() => {
-    const medicos = users.filter(u => u.role !== 'administrativo');
-    return [{ value: 'todos', label: 'Auditores' }, ...medicos.map(u => ({ value: u.fullName, label: u.fullName }))];
-  }, [users]);
-
-  const pacienteOptions = useMemo(() => {
-    const sorted = [...patients].sort((a, b) => a.apellido.localeCompare(b.apellido));
-    return [{ value: 'todos', label: 'Pacientes' }, ...sorted.map(p => ({ value: p.id, label: `${p.apellido}, ${p.nombre}` }))];
-  }, [patients]);
-
   return (
     <div className="min-h-screen bg-slate-50 font-inter -mx-4 md:mx-0">
-      {/* BARRA DE FILTROS FIJA (DESKTOP) */}
       <div className="hidden lg:block bg-white/80 backdrop-blur-xl sticky top-[-2rem] z-40 border-b border-slate-100 shadow-sm px-8 py-6 mb-8">
         <div className="max-w-7xl mx-auto flex items-end gap-6">
           <div className="flex-1 grid grid-cols-4 gap-4">
-            <SmartSelect label="Periodo" value={filterPeriod} options={periodOptions} onChange={setFilterPeriod} />
-            <SmartSelect label="Empresa" value={filterEmpresa} options={empresaOptions} onChange={setFilterEmpresa} />
-            <SmartSelect label="Auditor" value={filterMedico} options={auditorOptions} onChange={setFilterMedico} />
-            <SmartSelect label="Paciente" value={filterPacienteId} options={pacienteOptions} onChange={setFilterPacienteId} />
+            <SmartSelect label="Filtrar Periodo" value={filterPeriod} options={periodOptions} onChange={setFilterPeriod} />
+            <SmartSelect label="Filtrar Empresa" value={filterEmpresa} options={empresaOptions} onChange={setFilterEmpresa} />
+            <SmartSelect label="Filtrar Auditor" value={filterMedico} options={[{ value: 'todos', label: 'Todos los Médicos' }, ...users.filter(u => u.role !== 'administrativo').map(u => ({ value: u.fullName, label: u.fullName }))]} onChange={setFilterMedico} />
+            <SmartSelect label="Filtrar Paciente" value={filterPacienteId} options={[{ value: 'todos', label: 'Todos los Pacientes' }, ...patients.map(p => ({ value: p.id, label: `${p.apellido}, ${p.nombre}` }))]} onChange={setFilterPacienteId} />
           </div>
-          <div className="flex gap-2 mb-[1px]">
-            <button onClick={handleExportExcel} className="bg-emerald-600 text-white h-[44px] px-6 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-emerald-500/20 hover:bg-emerald-700 transition-all flex items-center gap-2 active:scale-95">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-              Excel
-            </button>
-            <button onClick={handleExportPDF} className="bg-slate-900 text-white h-[44px] px-6 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-slate-900/20 hover:bg-slate-800 transition-all flex items-center gap-2 active:scale-95">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
-              PDF
-            </button>
+          <div className="flex gap-2">
+            <button onClick={handleExportExcel} className="bg-emerald-600 text-white h-[44px] px-6 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-all active:scale-95 shadow-lg shadow-emerald-600/20" title="Exportar datos a Excel">Exportar Excel</button>
+            <button onClick={handleExportPDF} className="bg-slate-900 text-white h-[44px] px-6 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all active:scale-95 shadow-lg" title="Generar informe en PDF">Informe PDF</button>
           </div>
         </div>
       </div>
-
-      {/* BOTÓN FLOTANTE (MOBILE) */}
-      <div className="lg:hidden fixed bottom-6 right-6 z-[100] flex flex-col gap-3">
-        <button onClick={handleExportExcel} className="w-12 h-12 bg-emerald-600 text-white rounded-full shadow-2xl flex items-center justify-center active:scale-90 transition-transform border-4 border-white">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-        </button>
-        <button 
-          onClick={() => setIsMobilePanelOpen(true)}
-          className="w-14 h-14 bg-arial-orange text-white rounded-full shadow-2xl flex items-center justify-center active:scale-90 transition-transform ring-4 ring-orange-500/20"
-        >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
-        </button>
-      </div>
-
-      {/* PANEL DE FILTROS MÓVIL (BOTTOM SHEET) */}
-      {isMobilePanelOpen && (
-        <div className="lg:hidden fixed inset-0 z-[120] flex flex-col justify-end animate-in fade-in duration-300">
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsMobilePanelOpen(false)}></div>
-          <div className="relative bg-slate-900 rounded-t-[2.5rem] p-8 space-y-8 animate-in slide-in-from-bottom-full duration-500 border-t border-white/10">
-            <div className="flex justify-between items-center mb-2">
-              <h3 className="text-sm font-black text-white uppercase tracking-widest">Filtros Estadísticos</h3>
-              <button onClick={() => setIsMobilePanelOpen(false)} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 gap-5">
-              <SmartSelect label="Periodo Temporal" value={filterPeriod} options={periodOptions} onChange={setFilterPeriod} isDark />
-              <SmartSelect label="Entidad / Empresa" value={filterEmpresa} options={empresaOptions} onChange={setFilterEmpresa} isDark />
-              <SmartSelect label="Médico Auditor" value={filterMedico} options={auditorOptions} onChange={setFilterMedico} isDark />
-              <SmartSelect label="Nombre Paciente" value={filterPacienteId} options={pacienteOptions} onChange={setFilterPacienteId} isDark />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 pt-4">
-              <button onClick={handleExportExcel} className="bg-emerald-600 text-white py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-2">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                Excel
-              </button>
-              <button onClick={handleExportPDF} className="bg-slate-800 text-white py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl border border-white/5 flex items-center justify-center gap-2">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
-                PDF
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       <div className="max-w-7xl mx-auto space-y-4 md:space-y-8 px-4 md:px-0 pb-20 mt-4">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
-          <KPICard title="Solicitados" value={kpis.totalSuggested} sub="Pretensión" />
-          <KPICard title="Validados" value={kpis.totalAuthorized} sub="Auditoría" />
-          <KPICard title="Ahorro Real" value={kpis.totalSaved} sub="Días de Gestión" />
-          <KPICard title="Eficacia" value={`${kpis.efficiency}%`} sub="Performance" />
+          <KPICard title="Solicitados" value={kpis.totalSuggested} sub="Solicitud Original" />
+          <KPICard title="Validados" value={kpis.totalAuthorized} sub="Auditoría Real" />
+          <KPICard title="Días Ahorrados" value={kpis.totalSaved} sub="Gestión de Baja" />
+          <KPICard title="Tasa Eficacia" value={`${kpis.efficiency}%`} sub="Performance" />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-8 items-start">
           <div className="lg:col-span-5 bg-white p-6 md:p-10 rounded-3xl md:rounded-[2.5rem] shadow-sm border border-slate-200 h-[280px] md:h-[340px] flex flex-col">
-             <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-50 pb-2">Días Auditados</h3>
+             <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-50 pb-2">Comparativa de Días</h3>
              <div className="flex-1 relative w-full h-full"><canvas ref={barChartRef}></canvas></div>
           </div>
           <div className="lg:col-span-7 bg-white p-6 md:p-10 rounded-3xl md:rounded-[2.5rem] shadow-sm border border-slate-200 h-[380px] md:h-[480px] flex flex-col">
-            <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-6 border-b border-slate-50 pb-2">Mix Patológico</h3>
+            <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-6 border-b border-slate-50 pb-2">Distribución Patológica</h3>
             <div className="flex-1 relative w-full h-full"><canvas ref={pieChartRef}></canvas></div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl md:rounded-[2.5rem] shadow-sm border border-slate-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-50 bg-slate-50/30">
-            <h3 className="text-[8px] md:text-[9px] font-black text-slate-500 uppercase tracking-widest">Trazabilidad Auditoría</h3>
-          </div>
-          <div className="overflow-x-auto scrollbar-hide">
-            <table className="w-full text-left min-w-[800px]">
-              <thead>
-                <tr className="text-slate-400 text-[8px] font-black uppercase tracking-widest border-b border-slate-50">
-                  <th className="px-6 md:px-10 py-5">Colaborador / Diagnóstico</th>
-                  <th className="px-4 md:px-6 py-5">Auditores</th>
-                  <th className="px-4 md:px-6 py-5">Empresa</th>
-                  <th className="px-4 md:px-6 py-5 text-center">Auditado</th>
-                  <th className="px-6 md:px-10 py-5 text-center">Ahorro</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {processedData.length === 0 ? (
-                  <tr><td colSpan={5} className="py-20 text-center text-[9px] font-black text-slate-300 uppercase italic">Sin registros</td></tr>
-                ) : processedData.map(d => (
-                  <tr key={d.id} className="hover:bg-slate-50/50 transition-all">
-                    <td className="px-6 md:px-10 py-5">
-                      <p className="font-black text-slate-800 text-[11px] md:text-xs leading-tight">{d.patientName}</p>
-                      <p className="text-[8px] md:text-[9px] font-semibold text-slate-400 mt-0.5 uppercase truncate max-w-[150px]">{d.diagnosis}</p>
-                    </td>
-                    <td className="px-4 md:px-6 py-5">
-                      <span className="text-[8px] md:text-[9px] font-black text-arial-orange bg-orange-50/50 px-3 py-1.5 rounded-lg inline-block whitespace-normal">{d.auditorString}</span>
-                    </td>
-                    <td className="px-4 md:px-6 py-5 text-[8px] md:text-[9px] font-bold text-slate-400 uppercase truncate max-w-[100px]">{d.empresa}</td>
-                    <td className="px-4 md:px-6 py-5 text-center font-bold text-slate-500 text-[10px] md:text-[11px]">{d.suggested} / {d.authorized}</td>
-                    <td className="px-6 md:px-10 py-5 text-center font-black text-slate-700 text-[10px] md:text-[11px] whitespace-nowrap">{Math.abs(d.ahorro)} d</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
           </div>
         </div>
       </div>

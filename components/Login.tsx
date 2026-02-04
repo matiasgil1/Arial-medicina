@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { User } from '../types';
 
 interface LoginProps {
@@ -22,27 +22,16 @@ const Login: React.FC<LoginProps> = ({ onLogin, users, apiError, onRetry, isLoad
     const inputUser = String(username || '').toLowerCase().trim();
     const inputPass = String(password || '').trim();
 
-    // MODO DE EMERGENCIA (Para cuando no hay conexión con el Sheets)
-    if (inputUser === 'admin' && inputPass === 'admin123') {
-      onLogin({ 
-        id: 'emergency-id', 
-        username: 'admin', 
-        fullName: 'ADMIN DE EMERGENCIA', 
-        role: 'admin' 
-      });
-      return;
-    }
-
     if (users.length === 0) {
       if (isLoading) {
         setError("Sincronizando base de datos... aguarde unos segundos.");
       } else {
-        setError("Base de datos vacía o desconectada. Reintente o use el acceso de emergencia.");
+        setError("Base de datos no disponible. Intente sincronizar.");
       }
       return;
     }
 
-    // Busqueda normalizada
+    // Busqueda normalizada en la base de datos real
     const found = users.find(u => {
       const uName = String(u.username || '').toLowerCase().trim();
       const uPass = String(u.password || '').trim();
@@ -52,13 +41,12 @@ const Login: React.FC<LoginProps> = ({ onLogin, users, apiError, onRetry, isLoad
     if (found) {
       onLogin(found);
     } else {
-      setError("Credenciales no encontradas en el archivo Excel.");
+      setError("Credenciales inválidas. Verifique sus datos.");
     }
   };
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-[#BC4B13] p-6 relative overflow-hidden">
-      {/* Decoración */}
       <div className="absolute top-[-5%] left-[-5%] w-80 h-80 bg-white/5 rounded-full blur-3xl"></div>
       <div className="absolute bottom-[-10%] right-[-5%] w-[30rem] h-[30rem] bg-black/10 rounded-full blur-3xl"></div>
 
@@ -78,6 +66,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, users, apiError, onRetry, isLoad
                 onChange={e => setUsername(e.target.value)}
                 className="w-full px-6 py-5 rounded-2xl border-2 border-slate-50 bg-slate-50 focus:bg-white focus:border-arial-orange outline-none transition-all font-black text-slate-800 text-sm"
                 placeholder="ej: mgil"
+                disabled={isLoading}
                 required
               />
             </div>
@@ -90,21 +79,24 @@ const Login: React.FC<LoginProps> = ({ onLogin, users, apiError, onRetry, isLoad
                 onChange={e => setPassword(e.target.value)}
                 className="w-full px-6 py-5 rounded-2xl border-2 border-slate-50 bg-slate-50 focus:bg-white focus:border-arial-orange outline-none transition-all font-black text-slate-800 text-sm"
                 placeholder="••••"
+                disabled={isLoading}
                 required
               />
             </div>
 
             {error && (
-              <div className="bg-red-50 text-red-600 p-5 rounded-2xl text-[10px] font-black text-center border border-red-100 uppercase tracking-tight leading-relaxed">
+              <div className="bg-red-50 text-red-600 p-5 rounded-2xl text-[10px] font-black text-center border border-red-100 uppercase tracking-tight leading-relaxed animate-in shake duration-300">
                 {error}
               </div>
             )}
 
             <button 
               type="submit" 
-              className="w-full bg-arial-orange text-white py-5 rounded-2xl font-black text-xs uppercase tracking-[0.3em] shadow-2xl shadow-arial-orange/30 hover:brightness-110 active:scale-95 transition-all mt-4"
+              disabled={isLoading}
+              className="w-full bg-arial-orange text-white py-5 rounded-2xl font-black text-xs uppercase tracking-[0.3em] shadow-2xl shadow-arial-orange/30 hover:brightness-110 active:scale-95 transition-all mt-4 flex items-center justify-center gap-3 disabled:opacity-50"
             >
-              Entrar al Sistema
+              {isLoading && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
+              {isLoading ? "Validando..." : "Entrar al Sistema"}
             </button>
           </form>
           
@@ -113,9 +105,6 @@ const Login: React.FC<LoginProps> = ({ onLogin, users, apiError, onRetry, isLoad
               <button onClick={onRetry} className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-arial-orange border-b border-slate-200">
                 Sincronizar Manualmente
               </button>
-              <p className="text-[8px] font-black text-slate-300 uppercase tracking-widest block pt-2">
-                Emergencia: admin / admin123
-              </p>
             </div>
           )}
         </div>
