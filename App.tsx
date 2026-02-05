@@ -14,7 +14,7 @@ import CompanyManager from './components/CompanyManager';
 import Toast from './components/Toast';
 import Login from './components/Login';
 
-const API_URL = "https://script.google.com/macros/s/AKfycbxGLZinphqBkFk4o9eK1MK9oGnT-Es5UiiOoySsCvdn04R3ZYwKJjbb25zelAtSSgKYYA/exec"; 
+const API_URL = "https://script.google.com/macros/s/AKfycbz_NlU2-BRpbOPsNo-3nAsEGUCSnNT_mz_g_ash3AOFpQ9W4JXJeHyunfqjQ9WKzEMFDw/exec"; 
 const STORAGE_KEY_USER = 'arial_current_user';
 const STORAGE_KEY_VIEW = 'arial_current_view';
 
